@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: selfproject-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - TZ=Asia/Jakarta
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: selfproject-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - TZ=Asia/Jakarta
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: sh -c "npm install && npm run dev -- --host"
+
+networks:
+  default:
+    name: selfproject-network
+
+

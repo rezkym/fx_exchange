@@ -1,0 +1,10 @@
+{
+  "watch": ["src"],
+  "ext": "js,json",
+  "exec": "node src/index.js",
+  "signal": "SIGTERM",
+  "delay": 200,
+  "legacyWatch": true
+}
+
+
