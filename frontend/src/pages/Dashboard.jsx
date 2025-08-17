@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Info } from 'lucide-react';
 import { getCurrencies, getLive, getHistory } from '../services/api';
 import Chart from '../components/Chart';
 import Alert from '../components/Alert';
 import DashboardHero from '../components/DashboardHero';
 import QuickTools from '../components/QuickTools';
+import RefreshButton from '../components/RefreshButton';
+import StatusIndicator from '../components/StatusIndicator';
+import AnalyticsCharts from '../components/AnalyticsCharts';
 
 export default function Dashboard() {
   // State management
@@ -175,9 +177,13 @@ export default function Dashboard() {
       {/* Header Section */}
       <div className="flex flex-col gap-3">
         {/* Data source note */}
-        <div className="inline-flex items-center gap-2 bg-white/20 dark:bg-slate-800/30 backdrop-blur-md border border-white/30 dark:border-slate-600/40 rounded-full px-3 py-1.5 text-xs text-gray-700 dark:text-slate-300 shadow-lg dark:shadow-slate-900/20 w-fit transition-colors duration-300">
-          <Info className="w-3 h-3 text-gray-600 dark:text-slate-400 transition-colors duration-300" />
-          <span>Live data from Wise API • Updates every minute</span>
+        <div className="flex items-center justify-between">
+          <StatusIndicator 
+            isOnline={!error && !loading}
+            lastUpdate={liveData?.time}
+            error={!!error}
+          />
+          <RefreshButton onRefresh={handleRefresh} loading={loading} />
         </div>
         
         {/* Error Alert */}
@@ -223,6 +229,15 @@ export default function Dashboard() {
             loading={loading}
           />
         </div>
+      </div>
+
+      {/* Analytics Section */}
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">Analytics Dashboard</h2>
+          <div className="flex-1 h-px bg-gradient-to-r from-blue-500/50 to-purple-500/50"></div>
+        </div>
+        <AnalyticsCharts />
       </div>
     </div>
   );

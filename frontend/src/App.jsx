@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Navigation from './components/Navigation';
 import ThemeToggle from './components/ThemeToggle';
+import RefreshButton from './components/RefreshButton';
 
 // Import all pages
 import BankProviders from './pages/BankProviders';
@@ -26,13 +27,17 @@ export default function App() {
         <div className="lg:ml-64">
           {/* Header */}
           <header className="bg-white/10 dark:bg-slate-800/20 backdrop-blur-lg border-b border-white/30 dark:border-slate-700/30 shadow-lg transition-colors duration-300 sticky top-0 z-40">
-            <div className="px-6 sm:px-8 lg:px-12 py-6">
-              <div className="max-w-6xl mx-auto relative">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 transition-colors duration-300">FX Management System</h1>
-                <p className="text-gray-600 dark:text-slate-300 mt-1 transition-colors duration-300">Complete foreign exchange and banking management solution</p>
+            <div className="px-6 sm:px-8 lg:px-12 py-3">
+              <div className="max-w-6xl mx-auto relative flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 transition-colors duration-300">FX Management System</h1>
+                  <p className="text-gray-600 dark:text-slate-300 text-sm transition-colors duration-300">Complete foreign exchange and banking management solution</p>
+                </div>
                 
-                {/* Theme Toggle */}
-                <ThemeToggle />
+                {/* Theme Toggle and Refresh Button Container */}
+                <div className="flex items-center gap-2">
+                  <ThemeToggle />
+                </div>
               </div>
             </div>
           </header>

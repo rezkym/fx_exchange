@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Minus, Clock, ArrowRightLeft } from 'lucide-react';
 import { formatRate } from '../utils/format';
+import SearchableSelect from './SearchableSelect';
 
 const DashboardHero = ({ 
   liveData, 
@@ -81,18 +82,15 @@ const DashboardHero = ({
       {/* Header Row */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-slate-200">
-            <select
-              value={sourceCurrency}
-              onChange={(e) => onSourceChange(e.target.value)}
-              className="bg-transparent border-0 text-lg font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-            >
-              {currencies.map(currency => (
-                <option key={currency} value={currency} className="bg-white dark:bg-slate-800">
-                  {currency}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-3">
+            <div className="w-20">
+              <SearchableSelect
+                value={sourceCurrency}
+                onChange={onSourceChange}
+                options={currencies}
+                placeholder="From"
+              />
+            </div>
             
             <button
               onClick={swapCurrencies}
@@ -106,17 +104,14 @@ const DashboardHero = ({
               />
             </button>
             
-            <select
-              value={targetCurrency}
-              onChange={(e) => onTargetChange(e.target.value)}
-              className="bg-transparent border-0 text-lg font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-            >
-              {currencies.map(currency => (
-                <option key={currency} value={currency} className="bg-white dark:bg-slate-800">
-                  {currency}
-                </option>
-              ))}
-            </select>
+            <div className="w-20">
+              <SearchableSelect
+                value={targetCurrency}
+                onChange={onTargetChange}
+                options={currencies}
+                placeholder="To"
+              />
+            </div>
           </div>
         </div>
         

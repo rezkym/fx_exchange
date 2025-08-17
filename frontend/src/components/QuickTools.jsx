@@ -81,13 +81,13 @@ const QuickTools = ({ currencies, onRefresh, loading }) => {
               value={amount}
               onChange={handleAmountChange}
               placeholder="Amount"
-              className="flex-1 px-3 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/60 dark:focus:ring-indigo-400/60 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-400"
+              className="w-20 px-3 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/60 dark:focus:ring-indigo-400/60 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-400"
               disabled={converting}
             />
             <select
               value={fromCurrency}
               onChange={(e) => setFromCurrency(e.target.value)}
-              className="px-2 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl focus:outline-none text-sm text-gray-900 dark:text-slate-100"
+              className="w-16 px-2 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl focus:outline-none text-sm text-gray-900 dark:text-slate-100"
               disabled={converting}
             >
               {currencies.map(currency => (
@@ -116,13 +116,13 @@ const QuickTools = ({ currencies, onRefresh, loading }) => {
 
           {/* To Currency */}
           <div className="flex items-center gap-2">
-            <div className="flex-1 px-3 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl text-sm text-gray-900 dark:text-slate-100">
+            <div className="w-20 px-3 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl text-sm text-gray-900 dark:text-slate-100 text-center">
               {result ? formatRate(result.convertedAmount, result.to) : '0'}
             </div>
             <select
               value={toCurrency}
               onChange={(e) => setToCurrency(e.target.value)}
-              className="px-2 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl focus:outline-none text-sm text-gray-900 dark:text-slate-100"
+              className="w-16 px-2 py-2 bg-white/40 dark:bg-slate-700/40 border border-white/50 dark:border-slate-600/50 rounded-xl focus:outline-none text-sm text-gray-900 dark:text-slate-100"
               disabled={converting}
             >
               {currencies.map(currency => (

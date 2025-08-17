@@ -14,7 +14,7 @@ const ThemeToggle = () => {
   };
 
   return (
-    <div className="absolute top-6 right-0 z-10">
+    <div>
       <button
         onClick={handleToggle}
         className={`
