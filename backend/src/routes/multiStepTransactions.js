@@ -506,3 +506,4 @@ async function getExchangeRate(fromCurrency, toCurrency) {
 }
 
 export default router;
+

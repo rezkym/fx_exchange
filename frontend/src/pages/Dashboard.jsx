@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { BarChart3, TrendingUp, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { getCurrencies, getLive, getHistory } from '../services/api';
 import Chart from '../components/Chart';
-import Controls from '../components/Controls';
-import StatCard from '../components/StatCard';
 import Alert from '../components/Alert';
-import Converter from '../components/Converter';
+import DashboardHero from '../components/DashboardHero';
+import QuickTools from '../components/QuickTools';
 
 export default function Dashboard() {
   // State management
@@ -101,32 +100,17 @@ export default function Dashboard() {
     if (!liveData || historyData.length < 2) return { change: 0, changeType: 'neutral' };
     
     const currentValue = liveData.value;
-    const currentTime = new Date(liveData.time);
     
-    // Find a data point that's at least 1 hour ago to get meaningful change
-    let previousValue = null;
-    const oneHourAgo = new Date(currentTime.getTime() - 60 * 60 * 1000);
-    
-    // Look for the most recent data point that's at least 1 hour old
+    // Look backwards to find the first different value
     for (let i = historyData.length - 1; i >= 0; i--) {
-      const dataTime = new Date(historyData[i].time);
-      if (dataTime <= oneHourAgo) {
-        previousValue = historyData[i].value;
-        break;
+      if (historyData[i].value !== currentValue) {
+        const change = currentValue - historyData[i].value;
+        const changeType = change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral';
+        return { change, changeType };
       }
     }
     
-    // If no data older than 1 hour, use the oldest available data
-    if (previousValue === null && historyData.length > 0) {
-      previousValue = historyData[0].value;
-    }
-    
-    if (!previousValue || previousValue === currentValue) return { change: 0, changeType: 'neutral' };
-    
-    const change = currentValue - previousValue;
-    const changeType = change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral';
-    
-    return { change, changeType };
+    return { change: 0, changeType: 'neutral' };
   };
 
   const { change, changeType } = calculateChange();
@@ -136,43 +120,29 @@ export default function Dashboard() {
     if (!liveData || historyData.length < 2) return { change: 0, changeType: 'neutral' };
     
     const currentValue = liveData.value;
-    const currentTime = new Date(liveData.time);
-    const dayAgo = new Date(currentTime.getTime() - 24 * 60 * 60 * 1000);
     
-    // Find data point closest to 24 hours ago, but prefer older data if available
-    let bestValue = null;
-    let bestTimeDiff = Infinity;
-    
-    for (let i = 0; i < historyData.length; i++) {
-      const dataTime = new Date(historyData[i].time);
-      const timeDiff = Math.abs(dataTime.getTime() - dayAgo.getTime());
+    // Always compare with the oldest available data in the current dataset
+    if (historyData.length > 0) {
+      const firstValue = historyData[0].value;
       
-      // Prefer data that's actually from 24 hours ago or older
-      if (dataTime <= dayAgo) {
-        if (timeDiff < bestTimeDiff) {
-          bestTimeDiff = timeDiff;
-          bestValue = historyData[i].value;
-        }
-      } else if (bestValue === null) {
-        // If no older data found, use the closest newer data as fallback
-        if (timeDiff < bestTimeDiff) {
-          bestTimeDiff = timeDiff;
-          bestValue = historyData[i].value;
+      // Also try to find a value that's actually different from current for more meaningful change
+      let comparisonValue = firstValue;
+      
+      // Look for the earliest different value
+      for (let i = 0; i < historyData.length; i++) {
+        if (historyData[i].value !== currentValue) {
+          comparisonValue = historyData[i].value;
+          break;
         }
       }
+      
+      const change = currentValue - comparisonValue;
+      const changeType = change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral';
+      
+      return { change, changeType };
     }
     
-    // If still no value found, use the oldest available data
-    if (bestValue === null && historyData.length > 0) {
-      bestValue = historyData[0].value;
-    }
-    
-    if (!bestValue || bestValue === currentValue) return { change: 0, changeType: 'neutral' };
-    
-    const change = currentValue - bestValue;
-    const changeType = change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral';
-    
-    return { change, changeType };
+    return { change: 0, changeType: 'neutral' };
   };
 
   const { change: change24h, changeType: changeType24h } = calculate24hChange();
@@ -201,15 +171,13 @@ export default function Dashboard() {
   }, [historyData, liveData, sourceCurrency, targetCurrency]);
 
   return (
-    <div className="space-y-4">
-      {/* Header with data source note and error alert */}
+    <div className="space-y-6">
+      {/* Header Section */}
       <div className="flex flex-col gap-3">
         {/* Data source note */}
         <div className="inline-flex items-center gap-2 bg-white/20 dark:bg-slate-800/30 backdrop-blur-md border border-white/30 dark:border-slate-600/40 rounded-full px-3 py-1.5 text-xs text-gray-700 dark:text-slate-300 shadow-lg dark:shadow-slate-900/20 w-fit transition-colors duration-300">
           <Info className="w-3 h-3 text-gray-600 dark:text-slate-400 transition-colors duration-300" />
-          <span>
-            Sumber data: Wise Rates API (live & history). Update otomatis setiap menit.
-          </span>
+          <span>Live data from Wise API • Updates every minute</span>
         </div>
         
         {/* Error Alert */}
@@ -222,69 +190,41 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Main Content */}
-      <div className="space-y-4">
-        {/* Top Section: Controls and Current Rate */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-          {/* Controls - Takes 3 columns on xl screens */}
-          <div className="xl:col-span-3">
-            <Controls
-              currencies={currencies}
-              sourceCurrency={sourceCurrency}
-              targetCurrency={targetCurrency}
-              timeRange={timeRange}
-              onSourceChange={setSourceCurrency}
-              onTargetChange={setTargetCurrency}
-              onTimeRangeChange={setTimeRange}
-              onRefresh={handleRefresh}
-              loading={loading}
-            />
-          </div>
-          
-          {/* Current Rate - Takes 1 column on xl screens */}
-          <div>
-            <StatCard
-              title="Current Rate"
-              value={liveData?.value}
-              change={change}
-              changeType={changeType}
-              loading={!liveData}
-              icon={BarChart3}
-              currency={targetCurrency}
-            />
-          </div>
-        </div>
+      {/* Hero Section - All key metrics in one compact card */}
+      <DashboardHero
+        liveData={liveData}
+        loading={loading}
+        currencies={currencies}
+        sourceCurrency={sourceCurrency}
+        targetCurrency={targetCurrency}
+        timeRange={timeRange}
+        change={change}
+        changeType={changeType}
+        change24h={change24h}
+        changeType24h={changeType24h}
+        onSourceChange={setSourceCurrency}
+        onTargetChange={setTargetCurrency}
+        onTimeRangeChange={setTimeRange}
+        onRefresh={handleRefresh}
+      />
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StatCard
-            title="24h Change"
-            value={change24h}
-            changeType={changeType24h}
-            loading={!liveData}
-            icon={TrendingUp}
-          />
-          <StatCard
-            title="Last Update"
-            value={liveData?.time}
-            loading={!liveData}
-            formatType="datetime"
-          />
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Chart Section - Takes 3 columns */}
+        <div className="xl:col-span-3">
+          <Chart data={displayData} loading={loading} />
         </div>
-
-        {/* Chart and Converter Row */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-          {/* Chart - Takes 3 columns on xl screens */}
-          <div className="xl:col-span-3">
-            <Chart data={displayData} loading={loading} />
-          </div>
-          
-          {/* Currency Converter - Takes 1 column on xl screens */}
-          <div>
-            <Converter currencies={currencies} />
-          </div>
+        
+        {/* Quick Tools Sidebar - Takes 1 column */}
+        <div className="xl:col-span-1">
+          <QuickTools 
+            currencies={currencies} 
+            onRefresh={handleRefresh}
+            loading={loading}
+          />
         </div>
       </div>
     </div>
   );
 }
+

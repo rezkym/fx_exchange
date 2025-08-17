@@ -19,20 +19,20 @@ export default function App() {
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-800 dark:to-gray-900 transition-colors duration-300">
-        {/* Theme Toggle */}
-        <ThemeToggle />
-        
         {/* Navigation Sidebar */}
         <Navigation />
         
         {/* Main Content Wrapper */}
         <div className="lg:ml-64">
           {/* Header */}
-          <header className="bg-white/10 dark:bg-slate-800/20 backdrop-blur-lg border-b border-white/30 dark:border-slate-700/30 shadow-lg transition-colors duration-300">
+          <header className="bg-white/10 dark:bg-slate-800/20 backdrop-blur-lg border-b border-white/30 dark:border-slate-700/30 shadow-lg transition-colors duration-300 sticky top-0 z-40">
             <div className="px-6 sm:px-8 lg:px-12 py-6">
-              <div className="max-w-6xl mx-auto">
+              <div className="max-w-6xl mx-auto relative">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 transition-colors duration-300">FX Management System</h1>
                 <p className="text-gray-600 dark:text-slate-300 mt-1 transition-colors duration-300">Complete foreign exchange and banking management solution</p>
+                
+                {/* Theme Toggle */}
+                <ThemeToggle />
               </div>
             </div>
           </header>

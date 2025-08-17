@@ -40,10 +40,32 @@ const Chart = ({ data, loading }) => {
     return null;
   };
 
+  const minValue = Math.min(...chartData.map(d => d.value));
+  const maxValue = Math.max(...chartData.map(d => d.value));
+  const valueRange = maxValue - minValue;
+  const avgValue = chartData.reduce((sum, d) => sum + d.value, 0) / chartData.length;
+
   return (
     <div className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-xl border border-white/40 dark:border-slate-600/40 rounded-2xl shadow-xl dark:shadow-slate-900/20 p-6 ring-1 ring-white/10 dark:ring-slate-700/20 h-fit transition-colors duration-300">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200 mb-6 transition-colors duration-300">Exchange Rate History</h3>
-      <div className="h-80">
+      {/* Header with embedded stats */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200 transition-colors duration-300">Exchange Rate History</h3>
+        <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-slate-400">
+          <div className="text-center">
+            <div className="text-gray-500 dark:text-slate-500">Range</div>
+            <div className="font-medium">±{valueRange.toFixed(2)}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-gray-500 dark:text-slate-500">Avg</div>
+            <div className="font-medium">{avgValue.toFixed(2)}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-gray-500 dark:text-slate-500">Points</div>
+            <div className="font-medium">{chartData.length}</div>
+          </div>
+        </div>
+      </div>
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 24, bottom: 8, left: 8 }}>
             <defs>

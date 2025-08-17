@@ -165,3 +165,4 @@ feeHistorySchema.pre('save', function(next) {
 });
 
 export default mongoose.model('FeeHistory', feeHistorySchema);
+

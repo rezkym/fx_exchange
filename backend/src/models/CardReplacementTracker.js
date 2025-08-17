@@ -290,3 +290,4 @@ cardReplacementTrackerSchema.methods._getRecommendations = function() {
 };
 
 export default mongoose.model('CardReplacementTracker', cardReplacementTrackerSchema);
+

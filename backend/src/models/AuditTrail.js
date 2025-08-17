@@ -325,3 +325,4 @@ auditTrailSchema.methods.closeInvestigation = function(resolution, notes) {
 };
 
 export default mongoose.model('AuditTrail', auditTrailSchema);
+
