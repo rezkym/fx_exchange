@@ -1,13 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { DollarSign, TrendingUp, Info } from 'lucide-react';
-import { getCurrencies, getLive, getHistory } from './services/api';
-import Chart from './components/Chart';
-import Controls from './components/Controls';
-import StatCard from './components/StatCard';
-import Alert from './components/Alert';
-import Converter from './components/Converter';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Navigation from './components/Navigation';
+import ThemeToggle from './components/ThemeToggle';
 
 // Import all pages
 import BankProviders from './pages/BankProviders';
@@ -23,40 +17,45 @@ import Dashboard from './pages/Dashboard';
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100">
-      {/* Navigation Sidebar */}
-      <Navigation />
-      
-      {/* Main Content Wrapper */}
-      <div className="lg:ml-64">
-        {/* Header */}
-        <header className="bg-white/10 backdrop-blur-lg border-b border-white/30 shadow-lg">
-          <div className="px-6 sm:px-8 lg:px-12 py-6">
-            <div className="max-w-6xl mx-auto">
-              <h1 className="text-3xl font-bold text-gray-900">FX Management System</h1>
-              <p className="text-gray-600 mt-1">Complete foreign exchange and banking management solution</p>
+    <ThemeProvider>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-800 dark:to-gray-900 transition-colors duration-300">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+        
+        {/* Navigation Sidebar */}
+        <Navigation />
+        
+        {/* Main Content Wrapper */}
+        <div className="lg:ml-64">
+          {/* Header */}
+          <header className="bg-white/10 dark:bg-slate-800/20 backdrop-blur-lg border-b border-white/30 dark:border-slate-700/30 shadow-lg transition-colors duration-300">
+            <div className="px-6 sm:px-8 lg:px-12 py-6">
+              <div className="max-w-6xl mx-auto">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 transition-colors duration-300">FX Management System</h1>
+                <p className="text-gray-600 dark:text-slate-300 mt-1 transition-colors duration-300">Complete foreign exchange and banking management solution</p>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Main Content Area */}
-        <main className="px-6 sm:px-8 lg:px-12 py-8">
-          <div className="max-w-6xl mx-auto">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/bank-providers" element={<BankProviders />} />
-              <Route path="/bank-accounts" element={<BankAccounts />} />
-              <Route path="/cards" element={<VirtualCards />} />
-              <Route path="/topups" element={<TopUps />} />
-              <Route path="/transactions" element={<Transfers />} />
-              <Route path="/multi-step" element={<MultiStepTransactions />} />
-              <Route path="/fraud-detection" element={<FraudDetection />} />
-              <Route path="/analytics" element={<Analytics />} />
-            </Routes>
-          </div>
-        </main>
+          {/* Main Content Area */}
+          <main className="px-6 sm:px-8 lg:px-12 py-8">
+            <div className="max-w-6xl mx-auto">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/bank-providers" element={<BankProviders />} />
+                <Route path="/bank-accounts" element={<BankAccounts />} />
+                <Route path="/cards" element={<VirtualCards />} />
+                <Route path="/topups" element={<TopUps />} />
+                <Route path="/transactions" element={<Transfers />} />
+                <Route path="/multi-step" element={<MultiStepTransactions />} />
+                <Route path="/fraud-detection" element={<FraudDetection />} />
+                <Route path="/analytics" element={<Analytics />} />
+              </Routes>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
 

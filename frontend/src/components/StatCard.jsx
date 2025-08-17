@@ -4,20 +4,20 @@ import { formatRate } from '../utils/format';
 const StatCard = ({ title, value, change, changeType, loading, icon: Icon, currency, formatType = 'currency' }) => {
   if (loading) {
     return (
-      <div className="bg-white/20 backdrop-blur-xl border border-white/40 rounded-2xl shadow-xl p-6 ring-1 ring-white/10">
+      <div className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-xl border border-white/40 dark:border-slate-600/40 rounded-2xl shadow-xl dark:shadow-slate-900/20 p-4 ring-1 ring-white/10 dark:ring-slate-700/20 transition-colors duration-300">
         <div className="animate-pulse">
-          <div className="h-4 bg-white/30 backdrop-blur-sm rounded w-3/4 mb-2"></div>
-          <div className="h-8 bg-white/30 backdrop-blur-sm rounded w-1/2 mb-2"></div>
-          <div className="h-3 bg-white/30 backdrop-blur-sm rounded w-1/3"></div>
+          <div className="h-3 bg-white/30 dark:bg-slate-600/30 backdrop-blur-sm rounded w-3/4 mb-1"></div>
+          <div className="h-6 bg-white/30 dark:bg-slate-600/30 backdrop-blur-sm rounded w-1/2 mb-1"></div>
+          <div className="h-2 bg-white/30 dark:bg-slate-600/30 backdrop-blur-sm rounded w-1/3"></div>
         </div>
       </div>
     );
   }
 
   const getChangeColor = () => {
-    if (changeType === 'positive') return 'text-green-600';
-    if (changeType === 'negative') return 'text-red-600';
-    return 'text-gray-600';
+    if (changeType === 'positive') return 'text-green-600 dark:text-green-400';
+    if (changeType === 'negative') return 'text-red-600 dark:text-red-400';
+    return 'text-gray-600 dark:text-slate-400';
   };
 
   const getChangeIcon = () => {
@@ -35,7 +35,8 @@ const StatCard = ({ title, value, change, changeType, loading, icon: Icon, curre
     if (formatType === 'text') {
       return val ?? '-';
     }
-    return formatRate(val, currency || 'IDR');
+    const formattedRate = formatRate(val, currency || 'IDR');
+    return `${formattedRate} ${currency || 'IDR'}`;
   };
 
   const formatChange = (val) => {
@@ -47,22 +48,24 @@ const StatCard = ({ title, value, change, changeType, loading, icon: Icon, curre
   };
 
   return (
-    <div className="bg-white/20 backdrop-blur-xl border border-white/40 rounded-2xl shadow-xl p-6 ring-1 ring-white/10 hover:bg-white/25 transition-all duration-300">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-        {Icon && <Icon className="w-5 h-5 text-gray-500" />}
+    <div className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-xl border border-white/40 dark:border-slate-600/40 rounded-2xl shadow-xl dark:shadow-slate-900/20 p-4 ring-1 ring-white/10 dark:ring-slate-700/20 hover:bg-white/25 dark:hover:bg-slate-800/40 transition-all duration-300">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-xs font-medium text-gray-600 dark:text-slate-300 transition-colors duration-300">{title}</h3>
+        {Icon && <Icon className="w-4 h-4 text-gray-500 dark:text-slate-400 transition-colors duration-300" />}
       </div>
       
-      <div className="mb-2">
-        <p className="text-2xl font-bold text-gray-900">
+      <div className="mb-1">
+        <p className="text-xl font-bold text-gray-900 dark:text-slate-100 transition-colors duration-300">
           {formatValue(value)}
         </p>
       </div>
       
       {change !== undefined && (
-        <div className={`flex items-center gap-1 text-sm ${getChangeColor()}`}>
+        <div className={`flex items-center gap-1 text-xs font-medium ${getChangeColor()} transition-colors duration-300`}>
           {getChangeIcon()}
-          <span>{formatChange(change)}</span>
+          <span className="bg-white/30 dark:bg-slate-700/40 backdrop-blur-sm px-1.5 py-0.5 rounded-md transition-colors duration-300">
+            {formatChange(change)}
+          </span>
         </div>
       )}
     </div>
