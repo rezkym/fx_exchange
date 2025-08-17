@@ -141,14 +141,10 @@ router.put('/bank-providers/:id', async (req, res) => {
   }
 });
 
-// DELETE bank provider (soft delete)
+// DELETE bank provider (hard delete)
 router.delete('/bank-providers/:id', async (req, res) => {
   try {
-    const provider = await BankProvider.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      { new: true }
-    );
+    const provider = await BankProvider.findByIdAndDelete(req.params.id);
     
     if (!provider) {
       return res.status(404).json({
@@ -159,13 +155,13 @@ router.delete('/bank-providers/:id', async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Bank provider deactivated successfully',
+      message: 'Bank provider deleted successfully',
       data: provider
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deactivating bank provider',
+      message: 'Error deleting bank provider',
       error: error.message
     });
   }

@@ -74,20 +74,135 @@ List semua bank accounts.
 ```
 
 ### POST /api/bank-accounts
-Buat account baru.
+Buat account baru dengan multi-currency wallets.
 
 **Request:**
 ```json
 {
-  "name": "Wise USD Account",
-  "provider": "507f1f77bcf86cd799439011",
+  "name": "Wise Multi-Currency Account",
+  "provider": "507f1f77bcf86cd799439011", 
   "accountNumber": "WISE001",
-  "currency": "USD"
+  "currencies": ["USD", "EUR", "GBP"]
 }
 ```
 
 ### GET /api/bank-accounts/:id/balance
-Cek balance account.
+Cek balance semua wallets dalam account.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "accountId": "507f1f77bcf86cd799439012",
+    "accountName": "Wise Multi-Currency Account",
+    "wallets": [
+      {"currency": "USD", "balance": 1000, "isActive": true},
+      {"currency": "EUR", "balance": 500, "isActive": true}
+    ],
+    "totalBalanceUSD": 1000,
+    "provider": {"name": "Wise", "code": "WISE"}
+  }
+}
+```
+
+### POST /api/bank-accounts/:id/currencies
+Tambah currency baru ke account.
+
+**Request:**
+```json
+{
+  "currency": "GBP"
+}
+```
+
+### PUT /api/bank-accounts/:id/wallets/:currency/balance
+Update balance wallet tertentu.
+
+**Request:**
+```json
+{
+  "amount": 100,
+  "operation": "add"
+}
+```
+
+### PUT /api/bank-accounts/:id
+Update account details (name, account number, address).
+
+**Request:**
+```json
+{
+  "name": "Updated Account Name",
+  "accountNumber": "WISE002",
+  "address": {
+    "street": "123 New Street",
+    "city": "Jakarta",
+    "country": "Indonesia",
+    "postalCode": "12345"
+  }
+}
+```
+
+### DELETE /api/bank-accounts/:id
+Smart delete dengan validasi saldo dan kartu.
+
+**Request Body:**
+```json
+{
+  "action": "check",
+  "deleteCards": false,
+  "freezeCards": false
+}
+```
+
+**Actions:**
+- `check`: Cek kondisi account (default)
+- `force_deactivate`: Deactivate account 
+- `delete_cards`: Hapus semua kartu dan account
+- `freeze_cards`: Freeze kartu dan deactivate account
+
+**Response scenarios:**
+
+**1. Permanent delete (no balance, no cards):**
+```json
+{
+  "success": true,
+  "message": "Bank account permanently deleted",
+  "action": "permanent_delete"
+}
+```
+
+**2. Has balance + cards (cannot delete):**
+```json
+{
+  "success": false,
+  "message": "Akun tidak dapat dihapus karena masih memiliki saldo aktif",
+  "reason": "has_balance_and_cards",
+  "data": {
+    "totalBalance": 1000,
+    "activeCards": 2,
+    "wallets": [...]
+  }
+}
+```
+
+**3. Has cards only (user choice required):**
+```json
+{
+  "success": false,
+  "message": "Akun memiliki kartu aktif",
+  "reason": "has_cards_only",
+  "data": {
+    "activeCards": 2,
+    "cards": [...]
+  },
+  "actions": {
+    "deleteCards": "Hapus semua kartu dan akun",
+    "freezeCards": "Freeze semua kartu dan deactivate akun"
+  }
+}
+```
 
 ---
 
@@ -363,8 +478,7 @@ Convert currency amounts.
 ### BankAccount
 - `name`: Account name
 - `provider`: Link to BankProvider
-- `currency`: Account currency
-- `balance`: Current balance
+- `wallets`: Array of currency wallets [{currency, balance, isActive}]
 - `accountNumber`: Account identifier
 
 ### Card

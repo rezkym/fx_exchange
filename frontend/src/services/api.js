@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE || '/api';
+const BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api';
 
 // Helper function untuk fetch dengan error handling
 const fetchWithErrorHandling = async (url, options = {}) => {
@@ -10,10 +10,18 @@ const fetchWithErrorHandling = async (url, options = {}) => {
       },
       ...options
     });
+    
+    const data = await response.json();
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Throw error dengan data untuk handling di frontend
+      const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+      error.status = response.status;
+      error.data = data;
+      throw error;
     }
-    return await response.json();
+    
+    return data;
   } catch (error) {
     console.error('API Error:', error);
     throw error;
@@ -54,13 +62,30 @@ export const convert = async ({ source, target, amount }) => {
 // ============================================
 
 export const getBankProviders = async () => {
-  return fetchWithErrorHandling(`${BASE_URL}/bank-providers`);
+  return fetchWithErrorHandling(`${BASE_URL}/bank-providers?isActive=true`);
 };
 
 export const createBankProvider = async (providerData) => {
   return fetchWithErrorHandling(`${BASE_URL}/bank-providers`, {
     method: 'POST',
     body: JSON.stringify(providerData)
+  });
+};
+
+export const getBankProvider = async (providerId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-providers/${providerId}`);
+};
+
+export const updateBankProvider = async (providerId, providerData) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-providers/${providerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(providerData)
+  });
+};
+
+export const deleteBankProvider = async (providerId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-providers/${providerId}`, {
+    method: 'DELETE'
   });
 };
 
@@ -81,6 +106,38 @@ export const createBankAccount = async (accountData) => {
 
 export const getBankAccountBalance = async (accountId) => {
   return fetchWithErrorHandling(`${BASE_URL}/bank-accounts/${accountId}/balance`);
+};
+
+export const addCurrencyToAccount = async (accountId, currency) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-accounts/${accountId}/currencies`, {
+    method: 'POST',
+    body: JSON.stringify({ currency })
+  });
+};
+
+export const updateWalletBalance = async (accountId, currency, amount, operation = 'add') => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-accounts/${accountId}/wallets/${currency}/balance`, {
+    method: 'PUT',
+    body: JSON.stringify({ amount, operation })
+  });
+};
+
+export const updateBankAccount = async (accountId, accountData) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-accounts/${accountId}`, {
+    method: 'PUT',
+    body: JSON.stringify(accountData)
+  });
+};
+
+export const deleteBankAccount = async (accountId, options = {}) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-accounts/${accountId}`, {
+    method: 'DELETE',
+    body: JSON.stringify(options)
+  });
+};
+
+export const getBankAccountDetails = async (accountId, timeRange = 30) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bank-accounts/${accountId}/details?timeRange=${timeRange}`);
 };
 
 // ============================================

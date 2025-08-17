@@ -30,13 +30,16 @@ export const seedInitialData = async () => {
     await wiseProvider.save();
     console.log('✅ Wise provider created');
     
-    // Create Sample Bank Account
+    // Create Sample Bank Account with multi-currency wallets
     const sampleAccount = new BankAccount({
-      name: 'Wise USD Account',
+      name: 'Wise Multi-Currency Account',
       provider: wiseProvider._id,
       accountNumber: 'WISE001',
-      currency: 'USD',
-      balance: 1000.00,
+      wallets: [
+        { currency: 'USD', balance: 1000.00, isActive: true, openedAt: new Date() },
+        { currency: 'EUR', balance: 850.00, isActive: true, openedAt: new Date() },
+        { currency: 'GBP', balance: 750.00, isActive: true, openedAt: new Date() }
+      ],
       isActive: true,
       address: {
         street: '123 Main St',

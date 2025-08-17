@@ -7,6 +7,7 @@ import RefreshButton from './components/RefreshButton';
 // Import all pages
 import BankProviders from './pages/BankProviders';
 import BankAccounts from './pages/BankAccounts';
+import BankAccountDetails from './pages/BankAccountDetails';
 import VirtualCards from './pages/VirtualCards';
 import TopUps from './pages/TopUps';
 import Transfers from './pages/Transfers';
@@ -49,6 +50,7 @@ export default function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/bank-providers" element={<BankProviders />} />
                 <Route path="/bank-accounts" element={<BankAccounts />} />
+                <Route path="/bank-accounts/:id" element={<BankAccountDetails />} />
                 <Route path="/cards" element={<VirtualCards />} />
                 <Route path="/topups" element={<TopUps />} />
                 <Route path="/transactions" element={<Transfers />} />
