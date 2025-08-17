@@ -1,4 +1,18 @@
 services:
+  mongodb:
+    image: mongo:7.0
+    container_name: selfproject-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_DATABASE=fx_calculator
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - selfproject-network
+
   backend:
     build:
       context: ./backend
@@ -8,10 +22,15 @@ services:
     environment:
       - NODE_ENV=development
       - TZ=Asia/Jakarta
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/fx_calculator?authSource=admin
     volumes:
       - ./backend:/app
       - /app/node_modules
+    depends_on:
+      - mongodb
     command: sh -c "npm install && npm run dev"
+    networks:
+      - selfproject-network
 
   frontend:
     build:
@@ -28,9 +47,14 @@ services:
     depends_on:
       - backend
     command: sh -c "npm install && npm run dev -- --host"
+    networks:
+      - selfproject-network
+
+volumes:
+  mongodb_data:
 
 networks:
-  default:
-    name: selfproject-network
+  selfproject-network:
+    driver: bridge
 
 
