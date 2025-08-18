@@ -191,7 +191,7 @@ router.put('/bank-accounts/:id', async (req, res) => {
 // DELETE bank account (smart delete dengan validasi saldo dan kartu)
 router.delete('/bank-accounts/:id', async (req, res) => {
   try {
-    const { action = 'check', deleteCards = false, freezeCards = false } = req.body;
+    const { action = 'check', deleteCards = false, freezeCards = false, forceDelete = false } = req.body;
     
     const account = await BankAccount.findById(req.params.id);
     
@@ -257,6 +257,59 @@ router.delete('/bank-accounts/:id', async (req, res) => {
           message: 'Bank account permanently deleted',
           action: 'permanent_delete',
           data: deletedAccount
+        });
+      }
+    }
+
+    // Handle force delete all - removes everything permanently
+    if (action === 'force_delete_all' && forceDelete) {
+      try {
+        // Import models yang diperlukan
+        const Card = (await import('../models/Card.js')).default;
+        const Transaction = (await import('../models/Transaction.js')).default;
+        const TopUp = (await import('../models/TopUp.js')).default;
+        const AuditTrail = (await import('../models/AuditTrail.js')).default;
+        const FeeHistory = (await import('../models/FeeHistory.js')).default;
+        
+        // Delete semua data terkait akun bank ini
+        await Promise.all([
+          // Delete semua kartu
+          Card.deleteMany({ bankAccount: req.params.id }),
+          // Delete semua transaksi (dari dan ke akun ini)
+          Transaction.deleteMany({
+            $or: [
+              { fromAccount: req.params.id },
+              { toAccount: req.params.id }
+            ]
+          }),
+          // Delete semua top up
+          TopUp.deleteMany({ bankAccount: req.params.id }),
+          // Delete audit trails
+          AuditTrail.deleteMany({ 
+            $or: [
+              { entityId: req.params.id },
+              { 'metadata.bankAccountId': req.params.id }
+            ]
+          }),
+          // Delete fee history
+          FeeHistory.deleteMany({ bankAccount: req.params.id })
+        ]);
+        
+        // Terakhir hapus bank account
+        const deletedAccount = await BankAccount.findByIdAndDelete(req.params.id);
+        
+        return res.json({
+          success: true,
+          message: 'Bank account dan semua data terkait berhasil dihapus permanent',
+          action: 'force_delete_all',
+          data: deletedAccount
+        });
+      } catch (forceDeleteError) {
+        console.error('Error during force delete:', forceDeleteError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error during force delete operation',
+          error: forceDeleteError.message
         });
       }
     }
