@@ -14,4 +14,47 @@ export function formatRate(value, currency) {
   }).format(Number(value));
 }
 
+export function formatCurrency(value, currency) {
+  if (value == null || Number.isNaN(Number(value))) return '-';
+  const fractionDigits = getRateFractionDigits(currency);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(Number(value));
+}
+
+export function formatDate(dateString, format = 'full') {
+  if (!dateString) return '-';
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
+  
+  const options = {
+    full: {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    },
+    short: {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    },
+    'month-year': {
+      year: 'numeric',
+      month: '2-digit'
+    },
+    time: {
+      hour: '2-digit',
+      minute: '2-digit'
+    }
+  };
+  
+  return new Intl.DateTimeFormat('en-US', options[format] || options.full).format(date);
+}
+
 

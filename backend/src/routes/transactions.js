@@ -5,12 +5,26 @@ import Card from '../models/Card.js';
 
 const router = express.Router();
 
-// GET all transactions
+// GET all transactions with enhanced filtering
 router.get('/transactions', async (req, res) => {
   try {
-    const { fromAccount, toAccount, status, currency } = req.query;
+    const { 
+      fromAccount, 
+      toAccount, 
+      status, 
+      currency,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 50,
+      startDate,
+      endDate
+    } = req.query;
+    
     let filter = {};
     
+    // Account filters
     if (fromAccount) {
       filter.fromAccount = fromAccount;
     }
@@ -19,10 +33,12 @@ router.get('/transactions', async (req, res) => {
       filter.toAccount = toAccount;
     }
     
+    // Status filter
     if (status) {
       filter.status = status;
     }
     
+    // Currency filter
     if (currency) {
       filter.$or = [
         { fromCurrency: currency.toUpperCase() },
@@ -30,16 +46,54 @@ router.get('/transactions', async (req, res) => {
       ];
     }
     
+    // Date range filter
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+    
+    // Search filter
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      filter.$or = [
+        { transactionId: searchRegex },
+        { description: searchRegex },
+        ...(filter.$or || [])
+      ];
+    }
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Sort options
+    const sortOptions = {};
+    const validSortFields = ['createdAt', 'amount', 'status', 'transactionId'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const sortDirection = sortOrder === 'asc' ? 1 : -1;
+    sortOptions[sortField] = sortDirection;
+    
     const transactions = await Transaction.find(filter)
-      .populate('fromAccount', 'name accountNumber currency')
-      .populate('toAccount', 'name accountNumber currency')
-      .populate('card', 'cardNumber cardName')
-      .sort({ createdAt: -1 });
+      .populate('fromAccount', 'name accountNumber currency balance')
+      .populate('toAccount', 'name accountNumber currency balance')
+      .populate('card', 'cardNumber cardName cardType status')
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    // Get total count for pagination
+    const totalCount = await Transaction.countDocuments(filter);
     
     res.json({
       success: true,
       data: transactions,
-      count: transactions.length
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / parseInt(limit)),
+        totalCount,
+        hasNextPage: skip + transactions.length < totalCount,
+        hasPrevPage: parseInt(page) > 1
+      }
     });
   } catch (error) {
     res.status(500).json({
@@ -332,6 +386,162 @@ router.put('/transactions/:id/status', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error updating transaction status',
+      error: error.message
+    });
+  }
+});
+
+// GET transaction analytics
+router.get('/transactions/analytics', async (req, res) => {
+  try {
+    const { startDate, endDate, currency } = req.query;
+    
+    let filter = {};
+    
+    // Date range filter
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+    
+    // Currency filter
+    if (currency) {
+      filter.$or = [
+        { fromCurrency: currency.toUpperCase() },
+        { toCurrency: currency.toUpperCase() }
+      ];
+    }
+    
+    const transactions = await Transaction.find(filter);
+    
+    // Calculate analytics
+    const analytics = {
+      totalTransactions: transactions.length,
+      totalVolume: transactions.reduce((sum, t) => sum + t.amount, 0),
+      totalFees: transactions.reduce((sum, t) => sum + (t.fee || 0), 0),
+      averageAmount: transactions.length > 0 ? transactions.reduce((sum, t) => sum + t.amount, 0) / transactions.length : 0,
+      byStatus: {},
+      byCurrency: {},
+      byMonth: {},
+      successRate: 0
+    };
+    
+    // Group by status
+    transactions.forEach(t => {
+      analytics.byStatus[t.status] = (analytics.byStatus[t.status] || 0) + 1;
+    });
+    
+    // Calculate success rate
+    const completedCount = analytics.byStatus.completed || 0;
+    analytics.successRate = transactions.length > 0 ? (completedCount / transactions.length) * 100 : 0;
+    
+    // Group by currency
+    transactions.forEach(t => {
+      const fromCurrency = t.fromCurrency;
+      const toCurrency = t.toCurrency;
+      
+      if (!analytics.byCurrency[fromCurrency]) {
+        analytics.byCurrency[fromCurrency] = { sent: 0, received: 0 };
+      }
+      if (!analytics.byCurrency[toCurrency]) {
+        analytics.byCurrency[toCurrency] = { sent: 0, received: 0 };
+      }
+      
+      analytics.byCurrency[fromCurrency].sent += t.amount;
+      analytics.byCurrency[toCurrency].received += t.convertedAmount || t.amount;
+    });
+    
+    // Group by month
+    transactions.forEach(t => {
+      const monthKey = new Date(t.createdAt).toISOString().slice(0, 7); // YYYY-MM
+      if (!analytics.byMonth[monthKey]) {
+        analytics.byMonth[monthKey] = {
+          count: 0,
+          volume: 0,
+          fees: 0
+        };
+      }
+      analytics.byMonth[monthKey].count += 1;
+      analytics.byMonth[monthKey].volume += t.amount;
+      analytics.byMonth[monthKey].fees += t.fee || 0;
+    });
+    
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transaction analytics',
+      error: error.message
+    });
+  }
+});
+
+// GET transaction trends
+router.get('/transactions/trends', async (req, res) => {
+  try {
+    const { days = 30, currency } = req.query;
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+    
+    let filter = {
+      createdAt: { $gte: startDate }
+    };
+    
+    if (currency) {
+      filter.$or = [
+        { fromCurrency: currency.toUpperCase() },
+        { toCurrency: currency.toUpperCase() }
+      ];
+    }
+    
+    const transactions = await Transaction.find(filter);
+    
+    // Group by day
+    const dailyData = {};
+    for (let i = 0; i < parseInt(days); i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayKey = date.toISOString().slice(0, 10); // YYYY-MM-DD
+      dailyData[dayKey] = {
+        date: dayKey,
+        count: 0,
+        volume: 0,
+        fees: 0,
+        successful: 0,
+        failed: 0
+      };
+    }
+    
+    transactions.forEach(t => {
+      const dayKey = new Date(t.createdAt).toISOString().slice(0, 10);
+      if (dailyData[dayKey]) {
+        dailyData[dayKey].count += 1;
+        dailyData[dayKey].volume += t.amount;
+        dailyData[dayKey].fees += t.fee || 0;
+        
+        if (t.status === 'completed') {
+          dailyData[dayKey].successful += 1;
+        } else if (t.status === 'failed') {
+          dailyData[dayKey].failed += 1;
+        }
+      }
+    });
+    
+    const trends = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+    
+    res.json({
+      success: true,
+      data: trends
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transaction trends',
       error: error.message
     });
   }

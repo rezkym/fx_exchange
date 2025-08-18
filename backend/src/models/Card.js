@@ -81,6 +81,27 @@ const cardSchema = new mongoose.Schema({
     },
     lastRiskAssessment: Date,
     flaggedReasons: [String]
+  },
+  binLookup: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BinLookup'
+  },
+  binInfo: {
+    bin: { type: String, default: null },
+    scheme: { type: String, default: 'unknown' },
+    cardType: { type: String, default: 'unknown' },
+    brand: { type: String, default: 'unknown' },
+    country: {
+      name: { type: String, default: 'Unknown' },
+      alpha2: { type: String, default: null },
+      emoji: { type: String, default: null },
+      currency: { type: String, default: null }
+    },
+    bank: {
+      name: { type: String, default: 'Unknown' },
+      city: { type: String, default: null }
+    },
+    lastUpdated: { type: Date, default: Date.now }
   }
 }, {
   timestamps: true

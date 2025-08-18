@@ -144,14 +144,38 @@ export const getBankAccountDetails = async (accountId, timeRange = 30) => {
 // VIRTUAL CARDS API
 // ============================================
 
-export const getCards = async () => {
-  return fetchWithErrorHandling(`${BASE_URL}/cards`);
+export const getCards = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/cards${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getCard = async (cardId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/cards/${cardId}`);
 };
 
 export const createCard = async (cardData) => {
   return fetchWithErrorHandling(`${BASE_URL}/cards`, {
     method: 'POST',
     body: JSON.stringify(cardData)
+  });
+};
+
+export const updateCard = async (cardId, updateData) => {
+  return fetchWithErrorHandling(`${BASE_URL}/cards/${cardId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updateData)
+  });
+};
+
+export const deleteCard = async (cardId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/cards/${cardId}`, {
+    method: 'DELETE'
   });
 };
 
@@ -162,6 +186,66 @@ export const replaceCard = async (cardId, replaceData) => {
   });
 };
 
+export const markCardAsUsed = async (cardId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/cards/${cardId}/mark-used`, {
+    method: 'POST'
+  });
+};
+
+export const getAvailableCards = async (bankAccountId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/cards/available/${bankAccountId}`);
+};
+
+// Cards Analytics API
+export const getCardsAnalyticsSummary = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/cards/analytics/summary${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getCardsAnalyticsByProvider = async () => {
+  return fetchWithErrorHandling(`${BASE_URL}/cards/analytics/providers`);
+};
+
+export const getCardsUsageAnalytics = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/cards/analytics/usage${queryString ? `?${queryString}` : ''}`);
+};
+
+// Fraud Detection API
+export const getFraudDetectionStatus = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/cards/fraud-detection/status${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getFraudDetectionAlerts = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/cards/fraud-detection/alerts${queryString ? `?${queryString}` : ''}`);
+};
+
 // ============================================
 // TOPUP SYSTEM API
 // ============================================
@@ -169,12 +253,16 @@ export const replaceCard = async (cardId, replaceData) => {
 export const getTopUps = async (params = {}) => {
   const queryParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') {
+    if (value !== undefined && value !== '' && value !== 'all') {
       queryParams.append(key, value);
     }
   });
   const query = queryParams.toString();
   return fetchWithErrorHandling(`${BASE_URL}/topups${query ? `?${query}` : ''}`);
+};
+
+export const getTopUp = async (topupId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/topups/${topupId}`);
 };
 
 export const createTopUp = async (topUpData) => {
@@ -213,18 +301,109 @@ export const getTopUpOptimization = async () => {
   return fetchWithErrorHandling(`${BASE_URL}/topups/analytics/optimization`);
 };
 
+export const getTopUpTrends = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/topups/analytics/trends${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getTopUpMethodsAnalysis = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/topups/analytics/methods${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getTopUpHealthMetrics = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/topups/analytics/health${queryString ? `?${queryString}` : ''}`);
+};
+
+export const bulkUpdateTopUps = async (topupIds, status, notes) => {
+  return fetchWithErrorHandling(`${BASE_URL}/topups/bulk-update`, {
+    method: 'POST',
+    body: JSON.stringify({ topupIds, status, notes })
+  });
+};
+
 // ============================================
 // TRANSACTIONS API
 // ============================================
 
-export const getTransactions = async () => {
-  return fetchWithErrorHandling(`${BASE_URL}/transactions`);
+export const getTransactions = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '' && value !== 'all') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/transactions${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getTransaction = async (transactionId) => {
+  return fetchWithErrorHandling(`${BASE_URL}/transactions/${transactionId}`);
+};
+
+export const getTransactionSummary = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/transactions/summary${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getTransactionAnalytics = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/transactions/analytics${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getTransactionTrends = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/transactions/trends${queryString ? `?${queryString}` : ''}`);
 };
 
 export const transferBetweenBanks = async (transferData) => {
   return fetchWithErrorHandling(`${BASE_URL}/transactions/transfer`, {
     method: 'POST',
     body: JSON.stringify(transferData)
+  });
+};
+
+export const updateTransactionStatus = async (transactionId, statusData) => {
+  return fetchWithErrorHandling(`${BASE_URL}/transactions/${transactionId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify(statusData)
   });
 };
 
@@ -254,13 +433,63 @@ export const getMultiStepTransactionStatus = async (transactionId) => {
 // FRAUD DETECTION API
 // ============================================
 
-export const getFraudDetectionStatus = async (bankAccountId) => {
-  const params = new URLSearchParams({ bankAccount: bankAccountId });
-  return fetchWithErrorHandling(`${BASE_URL}/cards/fraud-detection/status?${params}`);
+
+
+// ============================================
+// BIN LOOKUP API
+// ============================================
+
+export const lookupBin = async (cardNumber) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup/lookup/${cardNumber}`);
 };
 
-export const getFraudDetectionAlerts = async () => {
-  return fetchWithErrorHandling(`${BASE_URL}/cards/fraud-detection/alerts`);
+export const batchLookupBins = async (cardNumbers) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup/batch`, {
+    method: 'POST',
+    body: JSON.stringify({ cardNumbers })
+  });
+};
+
+export const getBinStatistics = async () => {
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup/statistics`);
+};
+
+export const searchBins = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup/search${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getBinLookups = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.append(key, value);
+    }
+  });
+  const queryString = queryParams.toString();
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup${queryString ? `?${queryString}` : ''}`);
+};
+
+export const getBinLookup = async (id) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup/${id}`);
+};
+
+export const deleteBinLookup = async (id) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup/${id}`, {
+    method: 'DELETE'
+  });
+};
+
+export const refreshBinData = async (id) => {
+  return fetchWithErrorHandling(`${BASE_URL}/bin-lookup/${id}/refresh`, {
+    method: 'PUT'
+  });
 };
 
 // ============================================

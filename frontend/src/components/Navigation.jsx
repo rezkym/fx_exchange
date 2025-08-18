@@ -10,6 +10,7 @@ import {
   Route, 
   Shield, 
   TrendingUp, 
+  BarChart3,
   Menu, 
   X,
   ChevronDown,
@@ -46,9 +47,10 @@ const Navigation = () => {
       ]
     },
     { path: '/topups', icon: ArrowUpCircle, label: 'TopUps' },
-    { path: '/transactions', icon: ArrowLeftRight, label: 'Transfers' },
+    { path: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
     { path: '/multi-step', icon: Route, label: 'Multi-Step' },
     { path: '/fraud-detection', icon: Shield, label: 'Fraud Detection' },
+    { path: '/bin-analytics', icon: BarChart3, label: 'BIN Analytics' },
     { path: '/analytics', icon: TrendingUp, label: 'Analytics' },
   ];
 

@@ -9,8 +9,11 @@ import BankProviders from './pages/BankProviders';
 import BankAccounts from './pages/BankAccounts';
 import BankAccountDetails from './pages/BankAccountDetails';
 import VirtualCards from './pages/VirtualCards';
+import VirtualCardDetails from './pages/VirtualCardDetails';
+import BinAnalytics from './pages/BinAnalytics';
 import TopUps from './pages/TopUps';
 import Transfers from './pages/Transfers';
+import Transactions from './pages/Transactions';
 import MultiStepTransactions from './pages/MultiStepTransactions';
 import FraudDetection from './pages/FraudDetection';
 import Analytics from './pages/Analytics';
@@ -51,9 +54,13 @@ export default function App() {
                 <Route path="/bank-providers" element={<BankProviders />} />
                 <Route path="/bank-accounts" element={<BankAccounts />} />
                 <Route path="/bank-accounts/:id" element={<BankAccountDetails />} />
+                <Route path="/virtual-cards" element={<VirtualCards />} />
+                <Route path="/virtual-cards/:cardId" element={<VirtualCardDetails />} />
                 <Route path="/cards" element={<VirtualCards />} />
+                <Route path="/bin-analytics" element={<BinAnalytics />} />
                 <Route path="/topups" element={<TopUps />} />
-                <Route path="/transactions" element={<Transfers />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/transfers" element={<Transfers />} />
                 <Route path="/multi-step" element={<MultiStepTransactions />} />
                 <Route path="/fraud-detection" element={<FraudDetection />} />
                 <Route path="/analytics" element={<Analytics />} />

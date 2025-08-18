@@ -10,7 +10,129 @@ Sistem ini untuk **manual tracking & management**. Tidak ada integrasi API denga
 
 ---
 
-## 1. Bank Providers
+## 1. BIN Lookup API
+
+### GET /api/bin-lookup/lookup/:cardNumber
+Lookup BIN information for a card number
+
+**Parameters:**
+- `cardNumber` (path): Card number to lookup
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "bin_lookup_id",
+    "bin": "457173",
+    "scheme": "visa",
+    "type": "debit",
+    "brand": "Visa/Dankort",
+    "prepaid": false,
+    "country": {
+      "numeric": "208",
+      "alpha2": "DK",
+      "name": "Denmark",
+      "emoji": "🇩🇰",
+      "currency": "DKK",
+      "latitude": 56,
+      "longitude": 10
+    },
+    "bank": {
+      "name": "Jyske Bank",
+      "url": "www.jyskebank.dk",
+      "phone": "+4589893300",
+      "city": "Hjørring"
+    },
+    "lookupCount": 5,
+    "lastLookupAt": "2024-01-15T10:30:00Z",
+    "riskLevel": "low",
+    "isPopular": false
+  }
+}
+```
+
+### POST /api/bin-lookup/batch
+Batch lookup multiple card numbers (max 50)
+
+**Request Body:**
+```json
+{
+  "cardNumbers": ["4571736000000000", "5555555555554444"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "cardNumber": "4571736000000000",
+      "success": true,
+      "data": { }
+    },
+    {
+      "cardNumber": "5555555555554444",
+      "success": false,
+      "error": "BIN not found"
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "successful": 1,
+    "failed": 1
+  }
+}
+```
+
+### GET /api/bin-lookup/statistics
+Get comprehensive BIN lookup statistics
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "totalBins": 150,
+      "totalLookups": 1250,
+      "averageLookupsPerBin": 8.3
+    },
+    "byScheme": [
+      { "scheme": "visa", "count": 80, "lookups": 650 }
+    ],
+    "byCountry": [
+      { "country": "United States", "count": 45, "lookups": 380 }
+    ],
+    "byType": [
+      { "type": "debit", "count": 90, "lookups": 750 }
+    ],
+    "popularBins": [],
+    "recentLookups": []
+  }
+}
+```
+
+### GET /api/bin-lookup/search
+Search BINs with filters
+
+**Query Parameters:**
+- `scheme`, `type`, `country`, `bankName`, `prepaid`, `riskLevel`
+- `page`, `limit` for pagination
+
+### GET /api/bin-lookup/:id
+Get specific BIN lookup by ID
+
+### DELETE /api/bin-lookup/:id
+Soft delete BIN lookup
+
+### PUT /api/bin-lookup/:id/refresh
+Refresh BIN data from external API
+
+---
+
+## 2. Bank Providers
 
 ### GET /api/bank-providers
 List semua bank providers (Wise, Aspire, dll).
@@ -209,7 +331,18 @@ Smart delete dengan validasi saldo dan kartu.
 ## 3. Virtual Cards
 
 ### GET /api/cards
-List semua cards.
+List semua cards dengan search, filter, dan pagination.
+
+**Query Parameters:**
+- `search`: Search by card number or name
+- `status`: Filter by status (active, used, expired, blocked)
+- `provider`: Filter by provider code
+- `bankAccount`: Filter by bank account ID
+- `currency`: Filter by currency
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 10)
+- `sortBy`: Sort field (default: createdAt)
+- `sortOrder`: Sort order (asc/desc, default: desc)
 
 **Response:**
 ```json
@@ -223,10 +356,90 @@ List semua cards.
       "status": "active",
       "bankAccount": {
         "name": "Wise USD Account",
-        "currency": "USD"
+        "currency": "USD",
+        "provider": {
+          "name": "Wise",
+          "code": "WISE"
+        }
+      },
+      "usageCount": 5,
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "fraudFlags": {
+        "isHighRisk": false,
+        "riskScore": 25
       }
     }
-  ]
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 3,
+    "totalItems": 25,
+    "itemsPerPage": 10,
+    "hasNextPage": true,
+    "hasPrevPage": false
+  },
+  "filters": {
+    "search": "John",
+    "status": "active",
+    "sortBy": "createdAt",
+    "sortOrder": "desc"
+  }
+}
+```
+
+### GET /api/cards/:id
+Get single card dengan detailed analytics.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "card": {
+      "basicInfo": {
+        "id": "507f1f77bcf86cd799439013",
+        "cardNumber": "4111111111111111",
+        "cardName": "John Doe",
+        "status": "active",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "expiredDate": "2025-12-31T23:59:59.999Z",
+        "usageCount": 5,
+        "creationSource": "initial"
+      },
+      "bankAccount": {
+        "name": "Wise USD Account",
+        "accountNumber": "WISE001",
+        "currency": "USD",
+        "provider": {
+          "name": "Wise",
+          "code": "WISE"
+        }
+      },
+      "fraudAnalytics": {
+        "isHighRisk": false,
+        "riskScore": 25,
+        "replacementCount": 1,
+        "flaggedReasons": []
+      },
+      "usageAnalytics": {
+        "totalUsage": 5,
+        "daysSinceCreation": 30,
+        "daysSinceLastUse": 2,
+        "averageUsagePerDay": 0.17,
+        "isExpired": false,
+        "daysUntilExpiry": 335
+      }
+    },
+    "relatedTransactions": [],
+    "fraudActivities": [],
+    "auditTrail": [],
+    "comparisonMetrics": {
+      "accountTotalCards": 3,
+      "rankByUsage": 1,
+      "usagePercentile": 100,
+      "riskComparison": "below_average"
+    }
+  }
 }
 ```
 
@@ -240,7 +453,82 @@ Buat card baru.
   "cardName": "John Doe",
   "expiredDate": "2025-12-31",
   "cvv": "123",
-  "bankAccount": "507f1f77bcf86cd799439012"
+  "bankAccount": "507f1f77bcf86cd799439012",
+  "address": {
+    "street": "123 Main St",
+    "city": "Jakarta",
+    "country": "Indonesia",
+    "postalCode": "12345"
+  },
+  "useAccountAddress": false
+}
+```
+
+### PUT /api/cards/:id
+Update card information.
+
+**Request:**
+```json
+{
+  "cardName": "John Doe Updated",
+  "expiredDate": "2026-12-31",
+  "cvv": "456",
+  "status": "active",
+  "address": {
+    "street": "456 New St",
+    "city": "Jakarta",
+    "country": "Indonesia"
+  }
+}
+```
+
+### DELETE /api/cards/:id
+Delete card (soft delete by setting status to blocked).
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Card blocked successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439013",
+    "status": "blocked"
+  }
+}
+```
+
+### POST /api/cards/:id/mark-used
+Mark card as used.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Card marked as used successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439013",
+    "status": "used",
+    "lastUsedAt": "2024-01-15T10:30:00.000Z",
+    "usageCount": 6
+  }
+}
+```
+
+### GET /api/cards/available/:bankAccountId
+Get available cards for a bank account.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439013",
+      "cardNumber": "4111****1111",
+      "status": "active"
+    }
+  ],
+  "count": 1
 }
 ```
 
@@ -254,7 +542,151 @@ Replace card (dengan fraud detection).
   "newCardName": "John Doe New",
   "newExpiredDate": "2026-12-31",
   "newCvv": "456",
-  "reason": "lost"
+  "reason": "lost",
+  "notes": "Card was lost during travel"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Card replaced successfully",
+  "data": {
+    "newCard": {
+      "_id": "507f1f77bcf86cd799439014",
+      "cardNumber": "4111****1112",
+      "status": "active"
+    },
+    "oldCardId": "507f1f77bcf86cd799439013",
+    "riskAssessment": {
+      "riskLevel": "low",
+      "riskScore": 15,
+      "alertTriggered": false
+    },
+    "fraudAlert": null,
+    "warnings": []
+  }
+}
+```
+
+### GET /api/cards/analytics/summary
+Get cards analytics summary.
+
+**Query Parameters:**
+- `bankAccount`: Filter by bank account ID
+- `provider`: Filter by provider code
+- `startDate`: Start date filter
+- `endDate`: End date filter
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalCards": 25,
+    "byStatus": {
+      "active": 15,
+      "used": 8,
+      "expired": 1,
+      "blocked": 1
+    },
+    "byProvider": {
+      "Wise": 15,
+      "Aspire": 10
+    },
+    "byCurrency": {
+      "USD": 20,
+      "EUR": 5
+    },
+    "fraudStats": {
+      "highRiskCards": 2,
+      "totalReplacements": 3,
+      "averageRiskScore": 25.5
+    },
+    "usageStats": {
+      "totalUsageCount": 125,
+      "averageUsagePerCard": 5.0,
+      "mostUsedCard": {
+        "_id": "507f1f77bcf86cd799439013",
+        "cardNumber": "4111****1111",
+        "usageCount": 15
+      },
+      "lastActivity": "2024-01-15T10:30:00.000Z"
+    },
+    "timeline": [
+      {
+        "date": "2024-01-01",
+        "count": 3
+      }
+    ]
+  }
+}
+```
+
+### GET /api/cards/analytics/providers
+Get cards analytics by provider.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "Wise",
+      "providerCode": "WISE",
+      "totalCards": 15,
+      "activeCards": 12,
+      "usedCards": 2,
+      "expiredCards": 1,
+      "blockedCards": 0,
+      "totalUsage": 75,
+      "totalReplacements": 2,
+      "averageRiskScore": 20.5
+    }
+  ]
+}
+```
+
+### GET /api/cards/analytics/usage
+Get cards usage analytics.
+
+**Query Parameters:**
+- `timeRange`: Time range (7d, 30d, 90d, 1y, default: 30d)
+- `bankAccount`: Filter by bank account ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalCardsUsed": 20,
+    "totalUsage": 100,
+    "averageUsagePerCard": 5.0,
+    "topUsedCards": [
+      {
+        "_id": "507f1f77bcf86cd799439013",
+        "cardNumber": "4111****1111",
+        "usageCount": 15,
+        "lastUsedAt": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "usageByStatus": {
+      "active": 60,
+      "used": 40
+    },
+    "dailyUsage": [
+      {
+        "date": "2024-01-01",
+        "usage": 5
+      }
+    ]
+  },
+  "timeRange": "30d",
+  "dateRange": {
+    "startDate": "2023-12-16T00:00:00.000Z",
+    "endDate": "2024-01-15T23:59:59.999Z"
+  }
 }
 ```
 

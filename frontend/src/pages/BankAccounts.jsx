@@ -6,6 +6,7 @@ import { showToast, showAlert } from '../utils/notifications';
 import { formatRate } from '../utils/format';
 import StatCard from '../components/StatCard';
 import Alert from '../components/Alert';
+import Swal from 'sweetalert2';
 
 const BankAccounts = () => {
   const navigate = useNavigate();
@@ -325,7 +326,45 @@ const BankAccounts = () => {
     }
   };
 
-  const confirmDelete = (account) => {
+  const confirmDelete = async (account) => {
+    // Check if account has no balance and no cards - use SweetAlert for simple confirmation
+    const hasBalance = account.wallets && account.wallets.some(wallet => wallet.balance > 0);
+    
+    if (!hasBalance) {
+      // Check if account has any cards by doing a preliminary check
+      try {
+        const response = await deleteBankAccount(account._id, { action: 'check' });
+        // If successful, it means no cards and no balance - use SweetAlert
+        const result = await Swal.fire({
+          title: 'Konfirmasi Hapus Akun',
+          html: `
+            <div class="text-left">
+              <p><strong>Akun:</strong> ${account.name}</p>
+              <p><strong>Nomor Akun:</strong> ${account.accountNumber}</p>
+              <br>
+              <p class="text-sm text-gray-600">Akun ini tidak memiliki saldo aktif dan kartu. Yakin ingin menghapus permanently?</p>
+            </div>
+          `,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'Ya, Hapus!',
+          cancelButtonText: 'Batal',
+          reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
+          showToast.success('Akun berhasil dihapus');
+          fetchAccounts();
+        }
+        return;
+      } catch (err) {
+        // If error, proceed with normal modal flow (has cards or other issues)
+      }
+    }
+    
+    // Normal flow for accounts with balance and/or cards
     setSelectedAccount(account);
     setDeleteMode('check');
     setDeleteOptions({});
@@ -344,6 +383,69 @@ const BankAccounts = () => {
 
   const handleForceDeactivate = () => {
     handleDeleteAccount('force_deactivate');
+  };
+
+  const handleForceDelete = async () => {
+    const result = await Swal.fire({
+      title: '⚠️ PERINGATAN: Force Delete',
+      html: `
+        <div class="text-left">
+          <p class="text-red-600 font-semibold mb-3">TINDAKAN INI TIDAK DAPAT DIBATALKAN!</p>
+          <p><strong>Akun:</strong> ${selectedAccount.name}</p>
+          <p><strong>Nomor Akun:</strong> ${selectedAccount.accountNumber}</p>
+          <br>
+          <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+            <p class="text-sm text-red-800 font-medium">Yang akan dihapus PERMANENT:</p>
+            <ul class="text-xs text-red-700 mt-2 list-disc list-inside">
+              <li>Semua saldo di akun ini</li>
+              <li>Semua kartu yang terkait (aktif maupun tidak)</li>
+              <li>Semua history transaksi</li>
+              <li>Semua data yang berkaitan dengan akun ini</li>
+            </ul>
+          </div>
+          <p class="text-sm text-gray-600">Ketik <strong>"FORCE DELETE"</strong> untuk konfirmasi:</p>
+        </div>
+      `,
+      input: 'text',
+      inputPlaceholder: 'Ketik: FORCE DELETE',
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Force Delete',
+      cancelButtonText: 'Batal',
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (value !== 'FORCE DELETE') {
+          return 'Harus mengetik "FORCE DELETE" untuk melanjutkan!';
+        }
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setDeleteLoading(true);
+        const response = await deleteBankAccount(selectedAccount._id, { 
+          action: 'force_delete_all',
+          forceDelete: true 
+        });
+        
+        if (response.success) {
+          showToast.success('Akun dan semua data terkait berhasil dihapus permanent');
+          setShowDeleteConfirm(false);
+          setSelectedAccount(null);
+          setDeleteMode('check');
+          setDeleteOptions({});
+          fetchAccounts();
+        } else {
+          throw new Error(response.message || 'Failed to force delete account');
+        }
+      } catch (err) {
+        showToast.error(err.message || 'Error during force delete');
+      } finally {
+        setDeleteLoading(false);
+      }
+    }
   };
 
   const handleReactivateAccount = async (accountId) => {
@@ -1164,13 +1266,13 @@ const BankAccounts = () => {
               {deleteMode === 'has_balance' && (
                 <div className="p-4 bg-orange-50/60 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
                   <p className="text-sm text-orange-800 dark:text-orange-200 font-medium mb-2">
-                    🚫 Account tidak dapat dihapus
+                    ⚠️ Akun memiliki saldo aktif dan kartu
                   </p>
                   <p className="text-xs text-orange-700 dark:text-orange-300 mb-2">
-                    Akun masih memiliki saldo aktif dan kartu.
+                    Pilih tindakan yang ingin dilakukan:
                   </p>
                   {deleteOptions.wallets && (
-                    <div className="mb-2">
+                    <div className="mb-3">
                       <p className="text-xs font-medium">Saldo aktif:</p>
                       <ul className="text-xs">
                         {deleteOptions.wallets.map((wallet, idx) => (
@@ -1179,20 +1281,38 @@ const BankAccounts = () => {
                       </ul>
                     </div>
                   )}
-                  <p className="text-xs text-orange-600 dark:text-orange-400">
-                    ✓ Akun akan di-deactivate dan dapat diaktifkan kembali
-                  </p>
+                  {deleteOptions.activeCards && (
+                    <div className="mb-3">
+                      <p className="text-xs font-medium">Kartu aktif: {deleteOptions.activeCards}</p>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleForceDeactivate}
+                      disabled={deleteLoading}
+                      className="w-full bg-orange-500/80 backdrop-blur-md border border-orange-400/50 text-white px-3 py-2 rounded-lg hover:bg-orange-600/80 transition-all duration-300 text-sm disabled:opacity-50"
+                    >
+                      {deleteLoading ? 'Processing...' : '❄️ Freeze Akun (Dapat diaktifkan kembali)'}
+                    </button>
+                    <button
+                      onClick={handleForceDelete}
+                      disabled={deleteLoading}
+                      className="w-full bg-red-600/80 backdrop-blur-md border border-red-500/50 text-white px-3 py-2 rounded-lg hover:bg-red-700/80 transition-all duration-300 text-sm disabled:opacity-50"
+                    >
+                      {deleteLoading ? 'Processing...' : '🗑️ Force Delete (Hapus SEMUA data permanent)'}
+                    </button>
+                  </div>
                 </div>
               )}
 
               {deleteMode === 'has_cards' && (
                 <div className="p-4 bg-blue-50/60 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-2">
-                    💳 Account memiliki {deleteOptions.activeCards} kartu aktif
+                    💳 Akun memiliki {deleteOptions.activeCards} kartu VCC tanpa saldo
                   </p>
                   {deleteOptions.cards && (
                     <div className="mb-3">
-                      <p className="text-xs font-medium mb-1">Kartu aktif:</p>
+                      <p className="text-xs font-medium mb-1">Kartu yang akan terpengaruh:</p>
                       <ul className="text-xs space-y-1">
                         {deleteOptions.cards.map((card, idx) => (
                           <li key={idx} className="flex justify-between">
@@ -1203,8 +1323,16 @@ const BankAccounts = () => {
                       </ul>
                     </div>
                   )}
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                    <p className="text-xs text-yellow-800 font-medium mb-1">⚠️ PERINGATAN:</p>
+                    <ul className="text-xs text-yellow-700 list-disc list-inside">
+                      <li>Semua kartu yang berkaitan akan ikut dihapus</li>
+                      <li>History transaksi akan ikut dihapus</li>
+                      <li>Semua data yang berkaitan dengan akun ini akan dihapus</li>
+                    </ul>
+                  </div>
                   <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
-                    Pilih aksi untuk kartu-kartu ini:
+                    Pilih tindakan yang ingin dilakukan:
                   </p>
                   <div className="space-y-2">
                     <button
@@ -1212,7 +1340,7 @@ const BankAccounts = () => {
                       disabled={deleteLoading}
                       className="w-full bg-red-500/80 backdrop-blur-md border border-red-400/50 text-white px-3 py-2 rounded-lg hover:bg-red-600/80 transition-all duration-300 text-sm disabled:opacity-50"
                     >
-                      {deleteLoading ? 'Processing...' : '🗑️ Hapus semua kartu dan akun'}
+                      {deleteLoading ? 'Processing...' : '🗑️ Hapus akun dan semua data terkait'}
                     </button>
                     <button
                       onClick={() => handleCardAction('freeze')}
@@ -1257,16 +1385,6 @@ const BankAccounts = () => {
                     {deleteLoading ? 'Checking...' : 'Proceed Delete'}
                   </button>
                 </>
-              )}
-
-              {deleteMode === 'has_balance' && (
-                <button
-                  onClick={handleForceDeactivate}
-                  disabled={deleteLoading}
-                  className="flex-1 bg-orange-500/80 backdrop-blur-md border border-orange-400/50 text-white px-4 py-2 rounded-xl hover:bg-orange-600/80 transition-all duration-300 disabled:opacity-50"
-                >
-                  {deleteLoading ? 'Deactivating...' : 'Deactivate Account'}
-                </button>
               )}
 
               <button
